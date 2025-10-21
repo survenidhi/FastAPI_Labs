@@ -1,3 +1,4 @@
+# FastAPI Multi-Model ML API Lab
 
 ---
 - Video Explanation: [FastAPI lab](https://www.youtube.com/watch?v=KReburHqRIQ&list=PLcS4TrUUc53LeKBIyXAaERFKBJ3dvc9GZ&index=4)
@@ -7,144 +8,399 @@
 
 ## Overview
 
-In this Lab, we will learn how to expose ML models as APIs using [FastAPI](https://fastapi.tiangolo.com/) and [uvicorn](https://www.uvicorn.org/).
-1. **FastAPI**: FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints.
-2. **uvicorn**: Uvicorn is an [Asynchronous Server Gateway Interface - ASGI](https://youtu.be/vKjCkeJGbNk) web server implementation for Python. It is often used to serve FastAPI aplications.
+In this enhanced lab, we expose **multiple ML models** as APIs using [FastAPI](https://fastapi.tiangolo.com/) and [uvicorn](https://www.uvicorn.org/).
 
-The workflow involves the following steps:
-1. Training a Decision Tree Classifier on Iris Dataset.
-2. Serving the trained model as an API using FastAPI and uvicorn.
+### Models Included:
+1. **Iris Classifier**: Decision Tree model for classifying iris flowers (3 species)
+2. **Wine Classifier**: Random Forest model for classifying Italian wines (3 cultivars)
 
-## Setting up the lab
+### Technologies:
+- **FastAPI**: Modern, fast web framework for building APIs with Python
+- **uvicorn**: ASGI web server implementation for Python
+- **Docker**: Containerization for easy deployment
+- **scikit-learn**: Machine learning library for model training
+- **joblib**: Efficient model persistence
 
-1. Create a virtual environment(e.g. **fastapi_lab1_env**).
-2. Activate the environment and install the required packages using `pip install -r requirements.txt`.
-
-### Project structure
+## Project Structure
 
 ```
-mlops_labs
-└── fastapi_lab1
-    ├── assets/
-    ├── fastapi_lab1_env/
-    ├── model/
-    │   └── iris_model.pkl
-    ├── src/
-    │   ├── __init__.py
-    │   ├── data.py
-    │   ├── main.py
-    │   ├── predict.py
-    │   └── train.py
-    ├── README.md
-    └── requirements.txt
+FastAPI_Labs/
+├── Dockerfile              # Docker configuration
+├── .dockerignore          # Docker ignore file
+├── requirements.txt       # Python dependencies
+├── README.md             # This file
+├── model/                # Trained models
+│   ├── iris_model.pkl    # Decision Tree for Iris
+│   └── wine_model.pkl    # Random Forest for Wine
+└── src/                  # Source code
+    ├── __init__.py
+    ├── data.py           # Original data loading
+    ├── data_loader.py    # Enhanced data loading for both datasets
+    ├── schemas.py        # Pydantic models for API
+    ├── train.py          # Original Iris training
+    ├── train_iris.py     # Enhanced Iris training
+    ├── train_wine.py     # Wine model training
+    ├── predict.py        # Multi-model prediction logic
+    └── main.py           # FastAPI application
+
 ```
 
-Note:
-- **fastapi[all]** in **requirements.txt** will install optional additional dependencies for fastapi which contains **uvicorn** too.
+## Setup Instructions
 
-## Running the Lab
+### Local Development Setup
 
-1. First step is to train a Decision Tree Classifier(Although you have **`model/iris_model.pkl`** when you cloned from the repo, let's create a new model). To do this, move into **src/** folder with
-    ```bash
-    cd src
-    ```
-2. To train the Decision Tree Classifier, run:
-    ```bash
-    python train.py
-    ```
-3. To serve the trained model as an API, run:
-    ```bash
-    uvicorn app:main --reload
-    ```
-4. Testing endpoints - to view the documentation of your api model you can use [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) (or) [http://localhost:8000/docs](http://localhost:8000/docs) after you run you run your FastAPI app.
-    
-![API page](assets/docs.png)
+1. **Create and activate virtual environment:**
+   ```bash
+   python -m venv venv
    
-You can also test out the results of your endpoints by interacting with them. Click on the dropdown button of your endpoint -> Try it out -> Fill the Request body -> Click on Execute button.
+   # Windows
+   .\venv\Scripts\activate.bat
+   
+   # Linux/Mac
+   source venv/bin/activate
+   ```
 
-![API response](assets/api_response.png)
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- You can also use other tools like [Postman](https://www.postman.com/) for API testing.
+3. **Train the models:**
+   ```bash
+   cd src
+   
+   # Train Iris model
+   python train.py
+   
+   # Train Wine model  
+   python train_wine.py
+   ```
 
-### FastAPI Syntax
+4. **Run the API:**
+   ```bash
+   # From src directory
+   uvicorn main:app --reload
+   
+   # From project root
+   uvicorn src.main:app --reload
+   ```
 
-- The instance of FASTAPI class can be defined as:
-    ```bash
-    app = FastAPI()
-     ```
-- When you run a FastAPI application, you often pass this app instance to an ASGI server uvicorn. The server then uses the app instance to handle incoming web requests and send responses based on the routes and logic you’ve defined in your FastAPI application.
-- To run a FastAPI application, run:
-    ```
-    uvicorn main:app --reload
-    ```
-- In this command, **main** is the name of the Python file containing your app instance (without the .py extension), and **app** is the name of the instance itself. The **--reload** flag tells uvicorn to restart the server whenever code changes are detected, which is useful during development and should not be used in production.
-- All the functions which should be used as API should be prefixed by **@app.get("/followed_by_endpoint_name")** or **@app.post("/followed_by_endpoint_name")**. This particular syntax is used to define route handlers (which function should handle an incoming request based on the URL and HTTP method), which are the functions responsible for responding to client requests to a given endpoint.
-    1. **Decorator (@)**: This symbol is used to define a decorator, which is a way to dynamically add functionality to functions or methods. In FastAPI, decorators are used to associate a function with a particular HTTP method and path.
-    2. **App Instance (app)**: This represents an instance of the FastAPI class. It is the core of your application and maintains the list of defined routes, request handlers, and other configurations.
-    3. **HTTP Method (get, post, etc.)**: The HTTP method specifies the type of HTTP request the route will respond to. For example, get is used for retrieving data, and post is used for sending data to the server. FastAPI provides a decorator for each standard HTTP method, such as @app.put, @app.delete, @app.patch, and @app.options, allowing you to define handlers for different types of client requests. For detailed info refer to this webiste by [Mdn](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods).
-    4. **Path/Endpoint ("/endpoint_name")**: This is the URL path where the API will be accessible. When a client makes a request to this path using the specified HTTP method, FastAPI will execute the associated function and return the response.
-- Using **async** in FastAPI allows for non-blocking operations, enabling the server to handle other requests while waiting for I/O tasks, like database queries or model loading, to complete. This leads to improved concurrency and resource utilization, enhancing the application's ability to manage multiple simultaneous requests efficiently.
+5. **Access the API:**
+   - Documentation: http://localhost:8000/docs
+   - Health check: http://localhost:8000/health
 
-### Data Models in FastAPI
+### Docker Setup
 
-##### 1. IrisData class
+1. **Build the Docker image:**
+   ```bash
+   docker build -t ml-api .
+   ```
 
-```python
-class IrisData(BaseModel):
-    petal_length: float
-    sepal_length:float
-    petal_width:float
-    sepal_width:float
+2. **Run the container:**
+   ```bash
+   docker run -d -p 8000:8000 --name ml-api-container ml-api
+   ```
+
+3. **Check if running:**
+   ```bash
+   docker ps
+   docker logs ml-api-container
+   ```
+
+4. **Stop and remove:**
+   ```bash
+   docker stop ml-api-container
+   docker rm ml-api-container
+   ```
+
+## API Endpoints
+
+### General Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Welcome message & available models |
+| GET | `/health` | API health check |
+| GET | `/docs` | Interactive API documentation |
+
+### Iris Classification Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/iris/predict` | Predict iris species |
+| POST | `/predict` | Legacy iris prediction (backward compatible) |
+| GET | `/iris/example` | Get example input |
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:8000/iris/predict" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sepal_length": 5.1,
+    "sepal_width": 3.5,
+    "petal_length": 1.4,
+    "petal_width": 0.2
+  }'
 ```
 
-The **IrisData** class is a [Pydantic model](https://docs.pydantic.dev/latest/concepts/models/) which defines the expected structure of the data for a request body. When you use it as a type annotation for a route operation parameter, FastAPI will perform the following actions:
-- **Request Body Reading:** FastAPI will read the request body as JSON.
-- **Data Conversion:** It will convert the corresponding types, if necessary.
-- **Data Validation:** It will validate the data. If the data is invalid, it will return a 422 Unprocessable Entity error response with details about what was incorrect.
-
-#### 2. IrisResponse class
-
-```python
-class IrisResponse(BaseModel):
-    response:int
-```
-
-The **IrisResponse** class is another Pydantic model that defines the structure of the response data for an endpoint. When you specify **response_model=IrisResponse** in a route operation, it tells FastAPI to:
-- **Serialize the Output**: Convert the output data to JSON format according to the IrisResponse model.
-- **Document the API**: Include the IrisResponse model in the generated API documentation, so API consumers know what to expect in the response.
-
----
-
-### FastAPI features
-
-1. **Request Body Reading**: When a client sends a request to a FastAPI endpoint, the request can include a body with data. For routes that expect data (commonly POST, PUT, or PATCH requests), this data is often in JSON format. FastAPI automatically reads the request body by checking the Content-Type header, which should be set to application/json for JSON payloads.
-2. **Data Conversion**: Once the request body is read, FastAPI utilizes Pydantic models to parse the JSON data. Pydantic attempts to construct an instance of the specified model using the data from the request body. During this instantiation, Pydantic converts the JSON data into the proper Python data types as declared in the model.
-    - For instance, if the JSON object has a field like petal_length with a value of "5.1" (a string), and the model expects a float, Pydantic will transform the string into a float. If conversion isn't possible (say, the value was "five point one"), Pydantic will raise a validation error.
-3. **Data Validation**: Pydantic checks that all required fields are present and that the values are of the correct type, adhering to any constraints defined in the model (such as string length or number range). If the validation passes, the endpoint has a verified Python object to work with. If validation fails (due to missing fields, incorrect types, or constraint violations), FastAPI responds with a 422 Unprocessable Entity status. This response includes a JSON body detailing the validation errors, aiding clients in correcting their request data.
-4. **Error Handling**: Error handling in FastAPI can be effectively managed using the HTTPException class. HTTPException is used to explicitly signal an HTTP error status code and return additional details about the error. When an HTTPException is raised within a route, FastAPI will catch the exception and use its content to form the HTTP response.
-- **Instantiation**: The HTTPException class is instantiated with at least two arguments: status_code and detail. The status_code argument is an integer that represents the HTTP status code (e.g., 404 for Not Found, 400 for Bad Request). The detail argument is a string or any JSON-encodable object that describes the error.
-- **Response**: When an HTTPException is raised, FastAPI sends an HTTP response with the status code specified. The detail provided in the HTTPException is sent as the body of the response in JSON format.
-
-```python
-from fastapi import FastAPI, HTTPException
-
-app = FastAPI()
-
-@app.get("/items/{item_id}")
-async def read_item(item_id: int):
-    item = get_item_by_id(item_id)  # Hypothetical function to fetch an item
-    if item is None:
-        raise HTTPException(status_code=404, detail=f"Item with ID {item_id} not found")
-    return item
-```
-
-In this example, **get_item_by_id** is a function that retrieves an item based on its ID. If no item with the given ID is found, an HTTPException with a 404 Not Found status code is raised, and the detail message is customized to include the ID of the item that was not found.
-
-FastAPI will catch this exception and return a response with a 404 status code and a JSON body like this:
-
+**Example Response:**
 ```json
 {
-    "detail": "Item with ID 1 not found"
+  "prediction": 0,
+  "species": "setosa",
+  "confidence": 1.0
 }
 ```
-- For more information on how to handle errors in FASTAPI refer to this [documentation](https://fastapi.tiangolo.com/tutorial/handling-errors/).
+
+### Wine Classification Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/wine/predict` | Predict wine type |
+| GET | `/wine/example` | Get example input |
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:8000/wine/predict" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "alcohol": 13.2,
+    "malic_acid": 1.78,
+    "ash": 2.14,
+    "alcalinity_of_ash": 11.2,
+    "magnesium": 100.0,
+    "total_phenols": 2.65,
+    "flavanoids": 2.76,
+    "nonflavanoid_phenols": 0.26,
+    "proanthocyanins": 1.28,
+    "color_intensity": 4.38,
+    "hue": 1.05,
+    "od280_od315_of_diluted_wines": 3.4,
+    "proline": 1050.0
+  }'
+```
+
+**Example Response:**
+```json
+{
+  "prediction": 0,
+  "wine_class": "Barolo",
+  "confidence": 0.98,
+  "probabilities": [0.98, 0.02, 0.0]
+}
+```
+
+## Model Details
+
+### Iris Classifier
+- **Algorithm**: Decision Tree Classifier
+- **Features**: 4 (sepal length/width, petal length/width)
+- **Classes**: 3 (Setosa, Versicolor, Virginica)
+- **Key Feature**: Petal length (most discriminative)
+- **Typical Accuracy**: ~95%
+
+### Wine Classifier
+- **Algorithm**: Random Forest Classifier (100 trees)
+- **Features**: 13 chemical properties
+- **Classes**: 3 (Barolo, Grignolino, Barbera)
+- **Key Features**: Alcohol content, Proline
+- **Typical Accuracy**: ~97%
+
+## Classification Logic
+
+### Iris Classification Rules:
+- **Setosa**: Petal length < 2.5 cm (small flowers)
+- **Versicolor**: Petal length 2.5-5.0 cm (medium flowers)
+- **Virginica**: Petal length > 5.0 cm (large flowers)
+
+### Wine Classification Rules:
+- **Barolo**: High alcohol (13-14%), high proline (>1000 mg/L)
+- **Grignolino**: Medium alcohol (12-13%), medium proline (600-900 mg/L)
+- **Barbera**: Low alcohol (11-12%), low proline (<600 mg/L)
+
+## Testing the API
+
+### Using Python:
+```python
+import requests
+
+# Test Iris
+iris_data = {
+    "sepal_length": 5.1,
+    "sepal_width": 3.5,
+    "petal_length": 1.4,
+    "petal_width": 0.2
+}
+response = requests.post("http://localhost:8000/iris/predict", json=iris_data)
+print("Iris:", response.json())
+
+# Test Wine
+wine_data = {
+    "alcohol": 13.2,
+    "malic_acid": 1.78,
+    # ... (include all 13 features)
+}
+response = requests.post("http://localhost:8000/wine/predict", json=wine_data)
+print("Wine:", response.json())
+```
+
+### Using PowerShell:
+```powershell
+# Test health
+Invoke-RestMethod -Uri "http://localhost:8000/health"
+
+# Test Iris
+$body = @{
+    sepal_length = 5.1
+    sepal_width = 3.5
+    petal_length = 1.4
+    petal_width = 0.2
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/iris/predict" `
+    -Body $body -ContentType "application/json"
+```
+
+## FastAPI Features Implemented
+
+### Data Models (Pydantic)
+
+**Request Models:**
+- `IrisData`: Validates iris flower measurements
+- `WineData`: Validates wine chemical properties
+
+**Response Models:**
+- `IrisResponse`: Returns prediction, species, confidence
+- `WineResponse`: Returns prediction, wine class, confidence, probabilities
+
+### Key Features:
+1. **Automatic Validation**: Input validation using Pydantic
+2. **Type Hints**: Full type annotation support
+3. **Interactive Docs**: Auto-generated Swagger UI
+4. **Async Support**: Non-blocking request handling
+5. **Error Handling**: HTTPException for proper error responses
+6. **Health Checks**: Monitoring endpoint for deployment
+
+## Docker Deployment
+
+### Dockerfile Features:
+- Python 3.9 slim base image
+- Efficient layer caching
+- Minimal image size
+- Health check included
+
+### Build and Run:
+```bash
+# Build image
+docker build -t ml-api .
+
+# Run container
+docker run -d \
+  --name ml-api \
+  -p 8000:8000 \
+  ml-api
+
+# View logs
+docker logs ml-api
+
+# Stop container
+docker stop ml-api
+```
+
+### Testing Docker Container:
+```bash
+# From host machine
+curl http://localhost:8000/health
+
+# Inside container
+docker exec ml-api curl http://localhost:8000/health
+```
+
+## Development Tips
+
+### Adding a New Model:
+1. Create training script: `train_[model].py`
+2. Add Pydantic schemas in `schemas.py`
+3. Update `predict.py` with prediction function
+4. Add endpoints in `main.py`
+5. Retrain and save model to `model/` directory
+
+### Debugging:
+```bash
+# Check loaded models
+curl http://localhost:8000/health
+
+# View API documentation
+open http://localhost:8000/docs
+
+# Check Docker logs
+docker logs -f ml-api-container
+```
+
+## Performance Metrics
+
+| Model | Training Samples | Test Accuracy | Inference Time |
+|-------|-----------------|---------------|----------------|
+| Iris | 150 | ~95% | <10ms |
+| Wine | 178 | ~97% | <15ms |
+
+## Future Enhancements
+
+- [ ] Add more classification models (Digits, Breast Cancer)
+- [ ] Implement batch prediction endpoints
+- [ ] Add model versioning
+- [ ] Create simple web UI
+- [ ] Add PostgreSQL for prediction logging
+- [ ] Implement CI/CD pipeline
+- [ ] Add Kubernetes deployment configs
+- [ ] Include A/B testing capabilities
+
+## Troubleshooting
+
+### Models not loading:
+```bash
+# Check if model files exist
+ls -la model/
+
+# Verify joblib installation
+pip show joblib
+```
+
+### Port already in use:
+```bash
+# Find process using port 8000
+netstat -tulnp | grep 8000
+
+# Kill the process or use different port
+uvicorn main:app --port 8001
+```
+
+### Docker issues:
+```bash
+# Rebuild without cache
+docker build --no-cache -t ml-api .
+
+# Check container logs
+docker logs ml-api-container
+
+# Enter container for debugging
+docker exec -it ml-api-container bash
+```
+
+## Contributors
+
+- Original Lab: [Dhanush Kumar Shankar](https://github.com/dhanush)
+- Blog Credits: [Sai Akhilesh Ande](https://github.com/saiakhilesh)
+- Multi-Model Enhancement: Nidhi Surve
+
+## License
+
+MIT License - Feel free to use for educational purposes
+
+## References
+
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Uvicorn Documentation](https://www.uvicorn.org/)
+- [Docker Documentation](https://docs.docker.com/)
+- [Scikit-learn Documentation](https://scikit-learn.org/)
+- [Pydantic Documentation](https://docs.pydantic.dev/)
