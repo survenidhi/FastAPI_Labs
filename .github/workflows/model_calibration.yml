@@ -1,0 +1,59 @@
+name: Train Iris and Wine Models
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 0 * * *" # Daily at midnight
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create directories
+        run: |
+          mkdir -p model
+          mkdir -p metrics
+
+      - name: Generate Timestamp
+        id: timestamp
+        run: echo "timestamp=$(date '+%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Train Models
+        run: |
+          cd src
+          python train_iris.py --timestamp ${{ steps.timestamp.outputs.timestamp }}
+          python train_wine.py --timestamp ${{ steps.timestamp.outputs.timestamp }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: models-${{ steps.timestamp.outputs.timestamp }}
+          path: |
+            model/*.pkl
+            metrics/*.json
+
+      - name: Commit and Push
+        run: |
+          git config --global user.email "nidhisurve7425@gmail.com"
+          git config --global user.name "survenidhi"
+          git add model/
+          git add metrics/
+          git diff --staged --quiet || git commit -m "Update models - ${{ steps.timestamp.outputs.timestamp }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

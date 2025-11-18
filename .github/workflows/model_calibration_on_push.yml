@@ -1,0 +1,52 @@
+name: Model Retraining on Push to Main
+
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow on pushes to the main branch
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Generate Timestamp
+      id: timestamp
+      run: echo "timestamp=$(date '+%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
+    - name: Create directories
+      run: |
+        mkdir -p model
+        mkdir -p metrics
+
+    - name: Train Iris Model
+      run: |
+        cd src
+        python train_iris.py --timestamp ${{ steps.timestamp.outputs.timestamp }}
+
+    - name: Train Wine Model
+      run: |
+        cd src
+        python train_wine.py --timestamp ${{ steps.timestamp.outputs.timestamp }}
+
+    - name: Commit and Push Changes
+      run: |
+        git config --global user.email "nidhisurve7425@gmail.com"
+        git config --global user.name "survenidhi"
+        git add model/
+        git add metrics/
+        git diff --staged --quiet || git commit -m "Retrain models on push - ${{ steps.timestamp.outputs.timestamp }}"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
